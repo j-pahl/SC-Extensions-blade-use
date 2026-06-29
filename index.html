@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Blade Report</title>
+<style>
+  :root {
+    --cp-bg: #1a1f2e;
+    --cp-surface: #222839;
+    --cp-surface-2: #2c3347;
+    --cp-border: rgba(255,255,255,0.08);
+    --cp-border-accent: rgba(255,255,255,0.15);
+    --cp-text: #e8eaf0;
+    --cp-text-muted: #8892a4;
+    --cp-text-dim: #5a6478;
+    --cp-blue: #4a90d9;
+    --cp-blue-dim: rgba(74,144,217,0.15);
+    --cp-green: #3dba7e;
+    --cp-green-dim: rgba(61,186,126,0.12);
+    --cp-red: #e05c5c;
+    --cp-red-dim: rgba(224,92,92,0.12);
+    --cp-amber: #e8a53a;
+    --cp-amber-dim: rgba(232,165,58,0.12);
+    --cp-purple: #8b7ff0;
+    --cp-font: -apple-system, 'Segoe UI', Arial, sans-serif;
+    --cp-mono: 'Consolas', 'Courier New', monospace;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--cp-font);
+    background: var(--cp-bg);
+    color: var(--cp-text);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ─── Header ─── */
+  .header {
+    background: var(--cp-surface);
+    border-bottom: 1px solid var(--cp-border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-icon {
+    width: 32px; height: 32px;
+    background: var(--cp-blue-dim);
+    border: 1px solid rgba(74,144,217,0.3);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .header-icon svg { width: 18px; height: 18px; }
+  .header-title { font-size: 15px; font-weight: 600; color: var(--cp-text); }
+  .header-sub { font-size: 11px; color: var(--cp-text-muted); margin-top: 1px; }
+  .header-spacer { flex: 1; }
+  .btn {
+    background: transparent;
+    border: 1px solid var(--cp-border-accent);
+    color: var(--cp-text);
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+    font-family: var(--cp-font);
+  }
+  .btn:hover { background: var(--cp-surface-2); }
+  .btn-primary {
+    background: var(--cp-blue);
+    border-color: var(--cp-blue);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #5a9ee3; }
+  .btn svg { width: 14px; height: 14px; }
+
+  /* ─── Toolbar ─── */
+  .toolbar {
+    background: var(--cp-surface);
+    border-bottom: 1px solid var(--cp-border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 10px; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    color: var(--cp-text-muted);
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--cp-bg);
+    border: 1px solid var(--cp-border-accent);
+    border-radius: var(--radius);
+    color: var(--cp-text);
+    font-family: var(--cp-font);
+    font-size: 12px;
+    padding: 6px 10px 6px 32px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--cp-blue); }
+  .search-input::placeholder { color: var(--cp-text-dim); }
+
+  select.filter-select {
+    background: var(--cp-bg);
+    border: 1px solid var(--cp-border-accent);
+    border-radius: var(--radius);
+    color: var(--cp-text);
+    font-family: var(--cp-font);
+    font-size: 12px;
+    padding: 6px 10px;
+    outline: none;
+    cursor: pointer;
+  }
+  select.filter-select:focus { border-color: var(--cp-blue); }
+
+  .toolbar-spacer { flex: 1; }
+  .last-refresh { font-size: 11px; color: var(--cp-text-dim); }
+
+  /* ─── Summary cards ─── */
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 16px 20px;
+  }
+  .metric-card {
+    background: var(--cp-surface);
+    border: 1px solid var(--cp-border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+  }
+  .metric-card.accent-green { border-left: 3px solid var(--cp-green); }
+  .metric-card.accent-red   { border-left: 3px solid var(--cp-red); }
+  .metric-card.accent-amber { border-left: 3px solid var(--cp-amber); }
+  .metric-card.accent-blue  { border-left: 3px solid var(--cp-blue); }
+  .metric-label {
+    font-size: 11px;
+    color: var(--cp-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .metric-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--cp-text);
+    line-height: 1;
+  }
+  .metric-sub {
+    font-size: 11px;
+    color: var(--cp-text-muted);
+    margin-top: 4px;
+  }
+
+  /* ─── Progress bar ─── */
+  .coverage-bar {
+    margin: 0 20px 16px;
+    background: var(--cp-surface);
+    border: 1px solid var(--cp-border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+  }
+  .coverage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .coverage-title { font-size: 12px; font-weight: 600; color: var(--cp-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .coverage-pct { font-size: 13px; font-weight: 600; color: var(--cp-green); }
+  .bar-track {
+    height: 8px;
+    background: var(--cp-surface-2);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    gap: 2px;
+  }
+  .bar-seg {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .bar-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .bar-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--cp-text-muted);
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ─── Blade grid ─── */
+  .section {
+    margin: 0 20px 20px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--cp-text-muted);
+  }
+  .blade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+  }
+  .blade-chip {
+    background: var(--cp-surface);
+    border: 1px solid var(--cp-border);
+    border-radius: var(--radius);
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .blade-chip:hover { background: var(--cp-surface-2); border-color: var(--cp-border-accent); }
+  .blade-chip.enabled  { border-color: rgba(61,186,126,0.35); background: var(--cp-green-dim); }
+  .blade-chip.disabled { opacity: 0.55; }
+  .blade-chip.mixed    { border-color: rgba(232,165,58,0.35); background: var(--cp-amber-dim); }
+  .blade-chip-icon { font-size: 20px; margin-bottom: 5px; }
+  .blade-chip-name { font-size: 10px; color: var(--cp-text); font-weight: 500; line-height: 1.3; }
+  .blade-chip-count { font-size: 10px; color: var(--cp-text-muted); margin-top: 3px; }
+
+  /* ─── Gateway table ─── */
+  .gw-table-wrap {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  thead th {
+    background: var(--cp-surface);
+    color: var(--cp-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 9px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--cp-border);
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--cp-text); }
+  thead th .sort-icon { opacity: 0.4; margin-left: 4px; }
+  thead th.sorted .sort-icon { opacity: 1; }
+  tbody tr {
+    border-bottom: 1px solid var(--cp-border);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--cp-surface); }
+  tbody tr.selected { background: var(--cp-blue-dim); }
+  td { padding: 9px 12px; vertical-align: middle; }
+  .gw-name { font-weight: 500; color: var(--cp-text); display: flex; align-items: center; gap: 6px; }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-dot.up    { background: var(--cp-green); box-shadow: 0 0 4px rgba(61,186,126,0.5); }
+  .status-dot.down  { background: var(--cp-red); }
+  .status-dot.warn  { background: var(--cp-amber); }
+  .gw-type { color: var(--cp-text-muted); font-size: 11px; }
+  .gw-ip { font-family: var(--cp-mono); font-size: 11px; color: var(--cp-text-muted); }
+
+  /* Blade badges in table */
+  .blade-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+  .blade-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10px; padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    font-family: var(--cp-font);
+  }
+  .blade-badge.on  { background: var(--cp-green-dim); border-color: rgba(61,186,126,0.3); color: var(--cp-green); }
+  .blade-badge.off { background: var(--cp-surface-2); border-color: var(--cp-border); color: var(--cp-text-dim); }
+  .blade-badge .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .blade-badge.on .dot  { background: var(--cp-green); }
+  .blade-badge.off .dot { background: var(--cp-text-dim); }
+
+  .pct-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 44px;
+    text-align: center;
+  }
+  .pct-pill.high   { background: var(--cp-green-dim);  color: var(--cp-green); }
+  .pct-pill.medium { background: var(--cp-amber-dim);  color: var(--cp-amber); }
+  .pct-pill.low    { background: var(--cp-red-dim);    color: var(--cp-red); }
+
+  /* ─── Detail panel ─── */
+  .detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    z-index: 100;
+  }
+  .detail-overlay.open { display: flex; }
+  .detail-panel {
+    background: var(--cp-surface);
+    border-left: 1px solid var(--cp-border-accent);
+    width: 360px;
+    height: 100%;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .detail-close {
+    background: transparent;
+    border: none;
+    color: var(--cp-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    line-height: 1;
+    font-size: 18px;
+  }
+  .detail-close:hover { color: var(--cp-text); background: var(--cp-surface-2); }
+  .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+  .detail-gw-name { font-size: 16px; font-weight: 600; color: var(--cp-text); }
+  .detail-meta { font-size: 11px; color: var(--cp-text-muted); margin-top: 4px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-title {
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--cp-text-dim);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--cp-border);
+  }
+  .detail-blade-row {
+    display: flex; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--cp-border);
+    gap: 10px;
+  }
+  .detail-blade-row:last-child { border-bottom: none; }
+  .detail-blade-icon { font-size: 16px; width: 24px; text-align: center; flex-shrink: 0; }
+  .detail-blade-name { flex: 1; font-size: 12px; color: var(--cp-text); }
+  .status-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .status-badge.on    { background: var(--cp-green-dim); color: var(--cp-green); }
+  .status-badge.off   { background: var(--cp-surface-2); color: var(--cp-text-dim); border: 1px solid var(--cp-border); }
+  .status-badge.warn  { background: var(--cp-amber-dim); color: var(--cp-amber); }
+
+  /* ─── Loading / Empty ─── */
+  .loading-wrap {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 20px; gap: 16px; color: var(--cp-text-muted);
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--cp-border-accent);
+    border-top-color: var(--cp-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 20px; gap: 10px; color: var(--cp-text-muted);
+    text-align: center;
+  }
+  .empty-state svg { width: 40px; height: 40px; opacity: 0.4; margin-bottom: 6px; }
+  .empty-state p { font-size: 12px; max-width: 240px; line-height: 1.6; }
+
+  /* ─── Tabs ─── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--cp-border);
+    background: var(--cp-surface);
+  }
+  .tab {
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--cp-text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: var(--cp-font);
+  }
+  .tab:hover { color: var(--cp-text); }
+  .tab.active { color: var(--cp-blue); border-bottom-color: var(--cp-blue); }
+
+  /* ─── Responsive / mini ─── */
+  @media (max-width: 600px) {
+    .summary-row { grid-template-columns: 1fr 1fr; }
+    .header-sub, .metric-sub { display: none; }
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#4a90d9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/>
+      <polyline points="9 12 11 14 15 10"/>
+    </svg>
+  </div>
+  <div>
+    <div class="header-title">Security Blade Report</div>
+    <div class="header-sub">Check Point SmartConsole Extension · Blade Activation Status</div>
+  </div>
+  <div class="header-spacer"></div>
+  <button class="btn" onclick="exportCSV()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export CSV
+  </button>
+  <button class="btn btn-primary" onclick="refreshData()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    Refresh
+  </button>
+</header>
+
+<!-- Tabs -->
+<nav class="tabs" role="tablist">
+  <button class="tab active" onclick="switchTab('overview')" role="tab">Overview</button>
+  <button class="tab" onclick="switchTab('gateways')" role="tab">Gateways</button>
+  <button class="tab" onclick="switchTab('blades')" role="tab">Blades</button>
+</nav>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search gateways or blades…" oninput="applyFilters()">
+  </div>
+  <select class="filter-select" id="statusFilter" onchange="applyFilters()">
+    <option value="all">All statuses</option>
+    <option value="up">Connected</option>
+    <option value="down">Disconnected</option>
+    <option value="warn">Warning</option>
+  </select>
+  <select class="filter-select" id="bladeFilter" onchange="applyFilters()">
+    <option value="all">All blades</option>
+  </select>
+  <div class="toolbar-spacer"></div>
+  <span class="last-refresh" id="lastRefresh">Loading…</span>
+</div>
+
+<!-- Tab: Overview -->
+<div id="tab-overview">
+  <!-- Summary metrics -->
+  <div class="summary-row" id="summaryRow"></div>
+
+  <!-- Coverage bar -->
+  <div class="coverage-bar">
+    <div class="coverage-header">
+      <span class="coverage-title">Blade Coverage Across Gateways</span>
+      <span class="coverage-pct" id="coveragePct">—</span>
+    </div>
+    <div class="bar-track" id="barTrack"></div>
+    <div class="bar-legend" id="barLegend"></div>
+  </div>
+
+  <!-- Blade grid -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">Blade Activation Summary</span>
+    </div>
+    <div class="blade-grid" id="bladeGrid"></div>
+  </div>
+</div>
+
+<!-- Tab: Gateways -->
+<div id="tab-gateways" class="hidden">
+  <div class="section" style="margin-top:16px;">
+    <div class="gw-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('name')" class="sortable">Gateway <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('type')" class="sortable">Type <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('ip')" class="sortable">IP Address <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('status')" class="sortable">Status <span class="sort-icon">↕</span></th>
+            <th>Active Blades</th>
+            <th onclick="sortTable('pct')" class="sortable">Coverage <span class="sort-icon">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="gwTableBody"></tbody>
+      </table>
+      <div id="gwEmpty" class="empty-state hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p>No gateways match your current filters. Try adjusting the search or filter options.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Blades -->
+<div id="tab-blades" class="hidden">
+  <div class="section" style="margin-top:16px;">
+    <div class="gw-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Blade</th>
+            <th>Category</th>
+            <th>Enabled On</th>
+            <th>Disabled On</th>
+            <th>Coverage</th>
+          </tr>
+        </thead>
+        <tbody id="bladeTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Gateway detail panel -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+      <div>
+        <div class="detail-gw-name" id="detailName">—</div>
+        <div class="detail-meta" id="detailMeta">—</div>
+      </div>
+      <button class="detail-close" onclick="closeDetailPanel()" aria-label="Close">✕</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<script>
+// ── Data model ──────────────────────────────────────────────────────────────
+
+const BLADES = [
+  { id: 'fw',       name: 'Firewall',           icon: '🔥', category: 'Network' },
+  { id: 'vpn',      name: 'IPsec VPN',          icon: '🔒', category: 'VPN' },
+  { id: 'nat',      name: 'NAT',                icon: '🔀', category: 'Network' },
+  { id: 'ips',      name: 'IPS',                icon: '🛡️', category: 'Threat Prevention' },
+  { id: 'av',       name: 'Anti-Virus',         icon: '🦠', category: 'Threat Prevention' },
+  { id: 'ab',       name: 'Anti-Bot',           icon: '🤖', category: 'Threat Prevention' },
+  { id: 'te',       name: 'Threat Emulation',   icon: '🧪', category: 'Threat Prevention' },
+  { id: 'tex',      name: 'Threat Extraction',  icon: '🗂️', category: 'Threat Prevention' },
+  { id: 'urlf',     name: 'URL Filtering',      icon: '🌐', category: 'Access Control' },
+  { id: 'appc',     name: 'App Control',        icon: '📱', category: 'Access Control' },
+  { id: 'ctnt',     name: 'Content Awareness',  icon: '📄', category: 'Access Control' },
+  { id: 'ident',    name: 'Identity Awareness', icon: '👤', category: 'Access Control' },
+  { id: 'mobl',     name: 'Mobile Access',      icon: '📡', category: 'VPN' },
+  { id: 'qos',      name: 'QoS',                icon: '⚡', category: 'Network' },
+  { id: 'dlp',      name: 'DLP',                icon: '🔏', category: 'Data' },
+  { id: 'comply',   name: 'Compliance',         icon: '✅', category: 'Management' },
+];
+
+const GATEWAY_TEMPLATES = [
+  { name: 'CP-GW-DMZ-01',     ip: '10.0.1.10',   type: 'Security Gateway',   status: 'up',   blades: ['fw','vpn','nat','ips','av','ab','urlf','appc','ctnt','ident','te','tex'] },
+  { name: 'CP-GW-CORP-01',    ip: '10.0.2.10',   type: 'Security Gateway',   status: 'up',   blades: ['fw','nat','ips','av','ab','urlf','appc','ctnt','ident','dlp'] },
+  { name: 'CP-GW-CORP-02',    ip: '10.0.2.11',   type: 'Security Gateway',   status: 'up',   blades: ['fw','nat','ips','av','urlf','appc','ident'] },
+  { name: 'CP-CLU-01A',       ip: '10.0.3.10',   type: 'Cluster Member',     status: 'up',   blades: ['fw','vpn','nat','ips','av','ab','te','tex','urlf','appc','ctnt','ident','mobl'] },
+  { name: 'CP-CLU-01B',       ip: '10.0.3.11',   type: 'Cluster Member',     status: 'up',   blades: ['fw','vpn','nat','ips','av','ab','te','tex','urlf','appc','ctnt','ident','mobl'] },
+  { name: 'CP-GW-BRANCH-LDN', ip: '172.16.1.10', type: 'Security Gateway',   status: 'warn', blades: ['fw','vpn','nat','ips','av'] },
+  { name: 'CP-GW-BRANCH-NYC', ip: '172.16.2.10', type: 'Security Gateway',   status: 'up',   blades: ['fw','vpn','nat','ips','av','ab','urlf'] },
+  { name: 'CP-GW-BRANCH-TKY', ip: '172.16.3.10', type: 'Security Gateway',   status: 'up',   blades: ['fw','vpn','nat','ips'] },
+  { name: 'CP-VSX-01',        ip: '10.10.1.1',   type: 'VSX Gateway',        status: 'up',   blades: ['fw','nat','ips','av','ab','urlf','appc','ctnt','ident','qos'] },
+  { name: 'CP-GW-CLOUD-AWS',  ip: '10.20.1.10',  type: 'CloudGuard',         status: 'up',   blades: ['fw','nat','ips','av','ab','urlf','appc','ctnt','ident','te','tex','comply'] },
+  { name: 'CP-GW-CLOUD-AZ',   ip: '10.20.2.10',  type: 'CloudGuard',         status: 'warn', blades: ['fw','nat','ips','av','urlf','appc'] },
+  { name: 'CP-GW-LEGACY-01',  ip: '192.168.1.1', type: 'Security Gateway',   status: 'down', blades: ['fw','nat'] },
+  { name: 'CP-GW-OT-01',      ip: '10.30.1.10',  type: 'Security Gateway',   status: 'up',   blades: ['fw','nat','ips'] },
+  { name: 'CP-GW-ICS-01',     ip: '10.30.2.10',  type: 'Security Gateway',   status: 'up',   blades: ['fw','nat','ips','av','comply'] },
+];
+
+let allGateways = [];
+let filteredGateways = [];
+let sortKey = 'name';
+let sortAsc = true;
+let activeTab = 'overview';
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+function init() {
+  allGateways = GATEWAY_TEMPLATES.map(g => ({...g, blades: [...g.blades]}));
+  populateBladeFilter();
+  applyFilters();
+  updateLastRefresh();
+}
+
+function populateBladeFilter() {
+  const sel = document.getElementById('bladeFilter');
+  BLADES.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.name;
+    sel.appendChild(opt);
+  });
+}
+
+function applyFilters() {
+  const search  = document.getElementById('searchInput').value.toLowerCase();
+  const status  = document.getElementById('statusFilter').value;
+  const blade   = document.getElementById('bladeFilter').value;
+
+  filteredGateways = allGateways.filter(gw => {
+    const matchSearch = !search ||
+      gw.name.toLowerCase().includes(search) ||
+      gw.ip.includes(search) ||
+      gw.type.toLowerCase().includes(search) ||
+      gw.blades.some(b => {
+        const info = BLADES.find(x => x.id === b);
+        return info && info.name.toLowerCase().includes(search);
+      });
+    const matchStatus = status === 'all' || gw.status === status;
+    const matchBlade  = blade === 'all' || gw.blades.includes(blade);
+    return matchSearch && matchStatus && matchBlade;
+  });
+
+  renderCurrentTab();
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['overview','gateways','blades'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  ['overview','gateways','blades'].forEach(id => {
+    document.getElementById('tab-' + id).classList.toggle('hidden', id !== tab);
+  });
+  renderCurrentTab();
+}
+
+function renderCurrentTab() {
+  if (activeTab === 'overview')  renderOverview();
+  if (activeTab === 'gateways')  renderGatewayTable();
+  if (activeTab === 'blades')    renderBladeTable();
+}
+
+// ── Overview ─────────────────────────────────────────────────────────────────
+
+function renderOverview() {
+  const gws = filteredGateways;
+  const total  = gws.length;
+  const up     = gws.filter(g => g.status === 'up').length;
+  const down   = gws.filter(g => g.status === 'down').length;
+  const warn   = gws.filter(g => g.status === 'warn').length;
+
+  // Total blades active instances
+  const totalActive = gws.reduce((a,g) => a + g.blades.length, 0);
+  const totalPossible = total * BLADES.length;
+  const pct = totalPossible ? Math.round(totalActive / totalPossible * 100) : 0;
+
+  // Summary cards
+  document.getElementById('summaryRow').innerHTML = `
+    <div class="metric-card accent-blue">
+      <div class="metric-label">Total Gateways</div>
+      <div class="metric-value">${total}</div>
+      <div class="metric-sub">${allGateways.length} in inventory</div>
+    </div>
+    <div class="metric-card accent-green">
+      <div class="metric-label">Connected</div>
+      <div class="metric-value">${up}</div>
+      <div class="metric-sub">${total ? Math.round(up/total*100) : 0}% of filtered</div>
+    </div>
+    <div class="metric-card accent-amber">
+      <div class="metric-label">Warning</div>
+      <div class="metric-value">${warn}</div>
+      <div class="metric-sub">Needs attention</div>
+    </div>
+    <div class="metric-card accent-red">
+      <div class="metric-label">Disconnected</div>
+      <div class="metric-value">${down}</div>
+      <div class="metric-sub">Action required</div>
+    </div>
+  `;
+
+  // Coverage bar
+  document.getElementById('coveragePct').textContent = pct + '%';
+  document.getElementById('barTrack').innerHTML = `
+    <div class="bar-seg" style="width:${pct}%; background: var(--cp-green); flex:none;"></div>
+    <div class="bar-seg" style="width:${100-pct}%; background: var(--cp-surface-2); flex:none;"></div>
+  `;
+  document.getElementById('barLegend').innerHTML = `
+    <div class="bar-legend-item"><div class="legend-dot" style="background:var(--cp-green)"></div>${totalActive} blade activations enabled</div>
+    <div class="bar-legend-item"><div class="legend-dot" style="background:var(--cp-surface-2); border:1px solid var(--cp-border-accent)"></div>${totalPossible - totalActive} possible activations inactive</div>
+  `;
+
+  // Blade grid
+  const bladeGrid = document.getElementById('bladeGrid');
+  bladeGrid.innerHTML = '';
+  BLADES.forEach(blade => {
+    const enabledOn = gws.filter(g => g.blades.includes(blade.id));
+    const count = enabledOn.length;
+    const allOn = count === total && total > 0;
+    const allOff = count === 0;
+    const cls = allOn ? 'enabled' : allOff ? 'disabled' : 'mixed';
+    const chip = document.createElement('div');
+    chip.className = 'blade-chip ' + cls;
+    chip.title = `${blade.name}: ${count}/${total} gateways`;
+    chip.onclick = () => {
+      document.getElementById('bladeFilter').value = blade.id;
+      applyFilters();
+      switchTab('gateways');
+    };
+    chip.innerHTML = `
+      <div class="blade-chip-icon">${blade.icon}</div>
+      <div class="blade-chip-name">${blade.name}</div>
+      <div class="blade-chip-count">${count}/${total}</div>
+    `;
+    bladeGrid.appendChild(chip);
+  });
+}
+
+// ── Gateway Table ─────────────────────────────────────────────────────────────
+
+function sortTable(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = true; }
+  document.querySelectorAll('thead th.sortable').forEach(th => th.classList.remove('sorted'));
+  renderGatewayTable();
+}
+
+function renderGatewayTable() {
+  const gws = [...filteredGateways].sort((a,b) => {
+    let va, vb;
+    if (sortKey === 'name')   { va = a.name;   vb = b.name; }
+    if (sortKey === 'type')   { va = a.type;   vb = b.type; }
+    if (sortKey === 'ip')     { va = a.ip;     vb = b.ip; }
+    if (sortKey === 'status') { va = a.status; vb = b.status; }
+    if (sortKey === 'pct')    { va = a.blades.length; vb = b.blades.length; }
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ?  1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('gwTableBody');
+  const empty = document.getElementById('gwEmpty');
+
+  if (gws.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  tbody.innerHTML = gws.map(gw => {
+    const pct = Math.round(gw.blades.length / BLADES.length * 100);
+    const pctClass = pct >= 75 ? 'high' : pct >= 40 ? 'medium' : 'low';
+    const activeBadges = gw.blades.slice(0,5).map(bid => {
+      const b = BLADES.find(x => x.id === bid);
+      return b ? `<span class="blade-badge on"><span class="dot"></span>${b.name}</span>` : '';
+    }).join('') + (gw.blades.length > 5 ? `<span class="blade-badge off">+${gw.blades.length-5} more</span>` : '');
+
+    return `<tr onclick="showDetail('${gw.name}')" style="cursor:pointer">
+      <td><div class="gw-name"><div class="status-dot ${gw.status}"></div>${gw.name}</div></td>
+      <td class="gw-type">${gw.type}</td>
+      <td class="gw-ip">${gw.ip}</td>
+      <td>${statusLabel(gw.status)}</td>
+      <td><div class="blade-badges">${activeBadges}</div></td>
+      <td><span class="pct-pill ${pctClass}">${pct}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function statusLabel(s) {
+  if (s === 'up')   return '<span class="status-badge on">Connected</span>';
+  if (s === 'down') return '<span class="status-badge off">Disconnected</span>';
+  return '<span class="status-badge warn">Warning</span>';
+}
+
+// ── Blade Table ───────────────────────────────────────────────────────────────
+
+function renderBladeTable() {
+  const gws = filteredGateways;
+  const total = gws.length;
+  const tbody = document.getElementById('bladeTableBody');
+
+  // Group blades by category
+  const byCategory = {};
+  BLADES.forEach(blade => {
+    const enabled  = gws.filter(g => g.blades.includes(blade.id)).length;
+    const disabled = total - enabled;
+    const pct = total ? Math.round(enabled/total*100) : 0;
+    const pctClass = pct >= 75 ? 'high' : pct >= 40 ? 'medium' : 'low';
+    if (!byCategory[blade.category]) byCategory[blade.category] = [];
+    byCategory[blade.category].push({...blade, enabled, disabled, pct, pctClass});
+  });
+
+  let html = '';
+  Object.entries(byCategory).forEach(([cat, blades]) => {
+    html += `<tr><td colspan="5" style="background:var(--cp-surface-2); color:var(--cp-text-muted); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; padding:7px 12px;">${cat}</td></tr>`;
+    blades.forEach(b => {
+      html += `<tr>
+        <td><span style="margin-right:6px">${b.icon}</span><strong style="font-weight:500">${b.name}</strong></td>
+        <td style="color:var(--cp-text-muted); font-size:11px">${b.category}</td>
+        <td><span style="color:var(--cp-green); font-weight:600">${b.enabled}</span> <span style="color:var(--cp-text-dim); font-size:11px">gateways</span></td>
+        <td><span style="color:var(--cp-text-muted)">${b.disabled}</span> <span style="color:var(--cp-text-dim); font-size:11px">gateways</span></td>
+        <td><span class="pct-pill ${b.pctClass}">${b.pct}%</span></td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML = html;
+}
+
+// ── Detail panel ─────────────────────────────────────────────────────────────
+
+function showDetail(name) {
+  const gw = allGateways.find(g => g.name === name);
+  if (!gw) return;
+  document.getElementById('detailName').textContent = gw.name;
+  document.getElementById('detailMeta').textContent = `${gw.type} · ${gw.ip} · ${statusWord(gw.status)}`;
+
+  const enabledBlades  = BLADES.filter(b => gw.blades.includes(b.id));
+  const disabledBlades = BLADES.filter(b => !gw.blades.includes(b.id));
+  const pct = Math.round(gw.blades.length / BLADES.length * 100);
+
+  // Group enabled by category
+  const cats = [...new Set(enabledBlades.map(b => b.category))];
+
+  let html = `
+    <div class="detail-section">
+      <div class="detail-section-title">Coverage</div>
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+        <div style="flex:1; height:6px; background:var(--cp-surface-2); border-radius:3px; overflow:hidden;">
+          <div style="width:${pct}%; height:100%; background:var(--cp-green); border-radius:3px;"></div>
+        </div>
+        <span style="font-size:13px; font-weight:600; color:var(--cp-green);">${pct}%</span>
+      </div>
+      <div style="font-size:11px; color:var(--cp-text-muted)">${gw.blades.length} of ${BLADES.length} blades active</div>
+    </div>
+  `;
+
+  if (enabledBlades.length) {
+    html += `<div class="detail-section"><div class="detail-section-title">Active Blades</div>`;
+    cats.forEach(cat => {
+      const catBlades = enabledBlades.filter(b => b.category === cat);
+      html += `<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--cp-text-dim);padding:10px 0 4px;">${cat}</div>`;
+      catBlades.forEach(b => {
+        html += `<div class="detail-blade-row">
+          <div class="detail-blade-icon">${b.icon}</div>
+          <div class="detail-blade-name">${b.name}</div>
+          <span class="status-badge on">Active</span>
+        </div>`;
+      });
+    });
+    html += `</div>`;
+  }
+
+  if (disabledBlades.length) {
+    html += `<div class="detail-section"><div class="detail-section-title">Inactive Blades</div>`;
+    disabledBlades.forEach(b => {
+      html += `<div class="detail-blade-row">
+        <div class="detail-blade-icon" style="opacity:.5">${b.icon}</div>
+        <div class="detail-blade-name" style="color:var(--cp-text-muted)">${b.name}</div>
+        <span class="status-badge off">Inactive</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function statusWord(s) {
+  return s === 'up' ? 'Connected' : s === 'down' ? 'Disconnected' : 'Warning';
+}
+
+function closeDetail(e) {
+  if (e.target === document.getElementById('detailOverlay')) closeDetailPanel();
+}
+function closeDetailPanel() {
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+// ── Export CSV ───────────────────────────────────────────────────────────────
+
+function exportCSV() {
+  const headers = ['Gateway', 'Type', 'IP Address', 'Status', ...BLADES.map(b => b.name), 'Blades Active', 'Coverage %'];
+  const rows = allGateways.map(gw => {
+    const bladeFlags = BLADES.map(b => gw.blades.includes(b.id) ? '1' : '0');
+    const pct = Math.round(gw.blades.length / BLADES.length * 100);
+    return [gw.name, gw.type, gw.ip, gw.status, ...bladeFlags, gw.blades.length, pct + '%'];
+  });
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: 'blade-activation-report.csv'
+  });
+  a.click();
+}
+
+// ── Refresh ───────────────────────────────────────────────────────────────────
+
+function refreshData() {
+  const btn = document.querySelector('.btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<svg style="animation:spin .6s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refreshing…';
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Refresh';
+    updateLastRefresh();
+    renderCurrentTab();
+  }, 900);
+}
+
+function updateLastRefresh() {
+  const now = new Date();
+  document.getElementById('lastRefresh').textContent =
+    'Last refresh: ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "Security Blade Report",
+  "short_name": "BladeReport",
+  "version": "1.0.0",
+  "description": "Reports on security blade activation status across all managed gateways",
+  "vendor": "Custom Extension",
+  "panels": [
+    {
+      "name": "Security Blade Report",
+      "icon": "shield.svg",
+      "title": "Blade Activation",
+      "entry-point": "index.html",
+      "width": 900
+    }
+  ]
+}
